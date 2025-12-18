@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CampusConnect</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+      tailwind.config = {
+        corePlugins: {
+          preflight: false, // 👈 Isse aapka Home.jsx reset nahi hoga
+        },
+        // 🚀 Tailwind classes sirf dashboard area mein apply hongi
+        important: '.dashboard-active', 
+      }
+    </script>
+
+    <style>
+      /* Homepage Reset: Tailwind ke interference ko block karna */
+      html, body {
+        display: block !important;
+        background-color: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      /* Dashboard active hone par screen layout badlega */
+      .dashboard-active {
+        display: flex !important;
+        height: 100vh !important;
+        overflow: hidden !important;
+      }
+
+      /* Homepage layout ko stabilize karne ke liye standard rules */
+      .homepage-root {
+        width: 100%;
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
