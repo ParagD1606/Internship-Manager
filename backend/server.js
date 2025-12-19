@@ -5,6 +5,9 @@ const path = require('path');
 require('dotenv').config();
 
 const app = express();
+const internshipRoutes = require("./routes/internship");
+const adminRoutes = require("./routes/admin");
+const progressRoutes = require("./routes/progressRoutes");
 
 // Middleware
 app.use(express.json());
@@ -16,6 +19,14 @@ app.use('/api/applications', require('./routes/applications'));
 app.use('/api/ai-resume', require('./routes/ai-resume'));
 app.use('/api/ai-interview', require('./routes/ai-interview'));
 app.use('/api/ai-chatbot', require('./routes/ai-chatbot'));
+app.use("/api/engagements", require("./routes/engagementRoutes"));
+app.use("/api/progress", require("./routes/progressRoutes"));
+app.use("/api/faculty", require("./routes/facultyReviewRoutes"));
+app.use("/api/internship", internshipRoutes);
+app.use("/uploads", express.static("uploads"));
+app.use("/api/admin", adminRoutes); 
+app.use("/api/progressRoutes", progressRoutes);
+
 // --- DATABASE CONNECTION (DEBUGGED) ---
 const connectDB = async () => {
     try {

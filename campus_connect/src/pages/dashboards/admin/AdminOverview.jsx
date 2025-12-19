@@ -1,155 +1,164 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import { 
   Users, Briefcase, AlertTriangle, CheckCircle, 
   TrendingUp, Globe, Zap, ArrowUpRight, 
-  MessageSquare, FileText, Shield
+  FileText, Shield, BarChart3, Clock
 } from 'lucide-react';
 
 const AdminOverview = () => {
-  // 1. Mock Data for Metrics
-  const stats = [
-    { label: 'Total Students', value: '1,284', icon: <Users className="text-blue-600" />, trend: '+12%', color: 'bg-blue-50' },
-    { label: 'Active Internships', value: '432', icon: <Briefcase className="text-purple-600" />, trend: '+5%', color: 'bg-purple-50' },
-    { label: 'Pending Approvals', value: '18', icon: <Zap className="text-orange-600" />, trend: '-2', color: 'bg-orange-50' },
-    { label: 'Unresolved Disputes', value: '3', icon: <AlertTriangle className="text-red-600" />, trend: 'Critical', color: 'bg-red-50' },
-  ];
+  const [stats, setStats] = useState({
+    totalStudents: 0,
+    activeProjects: 0,
+    pendingApprovals: 0,
+    completedInternships: 0,
+    placementRate: 0
+  });
+  const [activities, setActivities] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const token = localStorage.getItem('token');
 
-  // 2. Mock Data for Recent Activity
-  const activities = [
-    { id: 1, user: 'TechCorp', action: 'posted a new internship', target: 'Frontend Dev', time: '2 mins ago', icon: <Briefcase size={14} /> },
-    { id: 2, user: 'Admin', action: 'resolved dispute', target: 'Case #1024', time: '45 mins ago', icon: <Shield size={14} /> },
-    { id: 3, user: 'Rahul V.', action: 'submitted certificate', target: 'Verification', time: '2 hours ago', icon: <FileText size={14} /> },
-    { id: 4, user: 'System', action: 'flagged content', target: 'User Comment', time: '5 hours ago', icon: <AlertTriangle size={14} /> },
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        // 1. Fetch live metrics from backend
+        const statsRes = await axios.get('/api/admin/dashboard-stats', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        // 2. Fetch live audit logs/activities
+        const activityRes = await axios.get('/api/admin/audit-logs?limit=4', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        setStats(statsRes.data);
+        setActivities(activityRes.data);
+      } catch (err) {
+        console.error("Failed to load dashboard data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  // Visual configuration for the 4 top metrics
+  const metrics = [
+    { label: 'Total Students', value: stats.totalStudents, icon: <Users className="text-blue-600" />, trend: '+4%', color: 'bg-blue-50' },
+    { label: 'Active Projects', value: stats.activeProjects, icon: <Briefcase className="text-purple-600" />, trend: 'Live', color: 'bg-purple-50' },
+    { label: 'Pending Reviews', value: stats.pendingApprovals, icon: <Clock className="text-orange-600" />, trend: stats.pendingApprovals > 5 ? 'High' : 'Low', color: 'bg-orange-50' },
+    { label: 'Completed Internships', value: stats.completedInternships, icon: <CheckCircle className="text-emerald-600" />, trend: 'Done', color: 'bg-emerald-50' },
   ];
 
   return (
     <div className="space-y-6">
-      {/* 1. WELCOME & QUICK ACTIONS */}
-      <div className="bg-gray-900 rounded-2xl p-8 text-white relative overflow-hidden shadow-xl">
+      {/* 1. WELCOME & DYNAMIC STATUS */}
+      <div className="bg-gray-900 rounded-3xl p-10 text-white relative overflow-hidden shadow-2xl">
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
           <div>
-            <h2 className="text-3xl font-bold mb-2">Institutional Command</h2>
-            <p className="text-gray-400 max-w-md">
-              Your platform is currently supporting <span className="text-white font-bold">12 partner companies</span> and 
-              <span className="text-white font-bold"> 84% student placement</span> this semester.
+            <h2 className="text-4xl font-black mb-3">Institutional Command</h2>
+            <p className="text-gray-400 max-w-lg leading-relaxed">
+              Your platform is currently overseeing <span className="text-indigo-400 font-bold">{stats.activeProjects} academic projects</span>. 
+              Review efficiency is currently at <span className="text-emerald-400 font-bold">{stats.placementRate}%</span> this week.
             </p>
           </div>
-          <div className="flex gap-3">
-            <button className="px-6 py-3 bg-red-600 hover:bg-red-700 rounded-xl font-bold transition-all active:scale-95 shadow-lg shadow-red-900/20">
-              Generate Report
-            </button>
-            <button className="px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl font-bold transition-all">
-              System Health
+          <div className="flex gap-4">
+            <button className="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-black transition-all shadow-lg shadow-indigo-900/40">
+              Generate Audit Report
             </button>
           </div>
         </div>
-        {/* Decorative Background Element */}
-        <Globe size={200} className="absolute -right-20 -bottom-20 text-white/5" />
+        <Globe size={250} className="absolute -right-20 -bottom-20 text-white/5 animate-pulse" />
       </div>
 
-      {/* 2. TOP METRICS GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, i) => (
-          <div key={i} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow group">
-            <div className="flex justify-between items-start mb-4">
-              <div className={`p-3 rounded-xl ${stat.color} group-hover:scale-110 transition-transform`}>
+      {/* 2. DYNAMIC METRICS GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {metrics.map((stat, i) => (
+          <div key={i} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl transition-all group">
+            <div className="flex justify-between items-start mb-5">
+              <div className={`p-4 rounded-2xl ${stat.color} group-hover:scale-110 transition-transform`}>
                 {stat.icon}
               </div>
-              <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${
-                stat.trend.startsWith('+') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-              }`}>
+              <span className="text-[10px] font-black px-3 py-1 bg-gray-100 text-gray-600 rounded-full tracking-tighter uppercase">
                 {stat.trend}
               </span>
             </div>
-            <p className="text-sm font-medium text-gray-500">{stat.label}</p>
-            <h3 className="text-2xl font-black text-gray-900 mt-1">{stat.value}</h3>
+            <p className="text-xs font-black text-gray-400 uppercase tracking-widest">{stat.label}</p>
+            <h3 className="text-3xl font-black text-gray-900 mt-2">{stat.value}</h3>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* 3. SYSTEM PERFORMANCE (Placeholder for Chart) */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="font-bold text-gray-900 flex items-center gap-2">
-              <TrendingUp className="text-green-500" size={20} />
-              Placement Velocity
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* 3. PROJECT LIFECYCLE ANALYTICS */}
+        <div className="lg:col-span-2 bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
+          <div className="flex justify-between items-center mb-8">
+            <h3 className="text-xl font-black text-gray-900 flex items-center gap-3">
+              <TrendingUp className="text-emerald-500" size={24} />
+              Project Completion Velocity
             </h3>
-            <select className="text-xs font-bold bg-gray-50 border-none rounded-lg p-2 outline-none">
-              <option>Last 30 Days</option>
-              <option>Last 6 Months</option>
-            </select>
+            <div className="px-4 py-2 bg-gray-50 rounded-xl text-xs font-bold text-gray-500 border border-gray-100">
+              Live Flow Monitor
+            </div>
           </div>
-          <div className="h-64 w-full bg-gray-50 rounded-xl border border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400">
-            <BarChart3 size={48} className="mb-2 opacity-20" />
-            <p className="text-sm font-medium">Engagement analytics will be visualized here.</p>
+          
+          <div className="h-72 w-full bg-gray-50/50 rounded-3xl border-2 border-dashed border-gray-100 flex flex-col items-center justify-center text-gray-400 relative">
+             
+             <p className="text-xs font-bold uppercase tracking-widest mt-4">Weekly Milestone Performance Tracking</p>
           </div>
-          <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-50">
+
+          <div className="grid grid-cols-3 gap-6 mt-10 pt-8 border-t border-gray-100">
             <div className="text-center">
-              <p className="text-xs font-bold text-gray-400 uppercase">Average Stipend</p>
-              <p className="text-lg font-bold text-gray-900">₹18,500</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase mb-2">Approved Logs</p>
+              <p className="text-2xl font-black text-gray-900">{stats.activeProjects * 2}</p>
             </div>
             <div className="text-center border-x border-gray-100">
-              <p className="text-xs font-bold text-gray-400 uppercase">Top Dept</p>
-              <p className="text-lg font-bold text-gray-900">CS / IT</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase mb-2">Pending Verify</p>
+              <p className="text-2xl font-black text-orange-500">{stats.pendingApprovals}</p>
             </div>
             <div className="text-center">
-              <p className="text-xs font-bold text-gray-400 uppercase">Hire Rate</p>
-              <p className="text-lg font-bold text-gray-900">92%</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase mb-2">Completion Rate</p>
+              <p className="text-2xl font-black text-emerald-500">{stats.placementRate}%</p>
             </div>
           </div>
         </div>
 
-        {/* 4. RECENT ACTIVITY FEED */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-          <h3 className="font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <zap className="text-yellow-500" size={20} fill="currentColor" />
-            Live Activity
+        {/* 4. LIVE ACTIVITY FEED (Dynamic) */}
+        <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
+          <h3 className="text-xl font-black text-gray-900 mb-8 flex items-center gap-3">
+            <Zap className="text-amber-500" size={24} fill="#f59e0b" />
+            System Pulse
           </h3>
-          <div className="space-y-6">
-            {activities.map((item) => (
-              <div key={item.id} className="flex gap-4 group">
+          <div className="space-y-8">
+            {activities.length > 0 ? activities.map((item) => (
+              <div key={item.id} className="flex gap-5 group">
                 <div className="relative">
-                  <div className="h-10 w-10 bg-gray-900 text-white rounded-xl flex items-center justify-center z-10 relative">
-                    {item.icon}
+                  <div className="h-12 w-12 bg-gray-900 text-white rounded-2xl flex items-center justify-center z-10 relative shadow-lg group-hover:bg-indigo-600 transition-colors">
+                    {item.type === 'PROJECT' ? <FileText size={18} /> : <Shield size={18} />}
                   </div>
-                  {/* Timeline connector line */}
-                  <div className="absolute top-10 left-1/2 -translate-x-1/2 w-px h-10 bg-gray-100 group-last:hidden"></div>
+                  <div className="absolute top-12 left-1/2 -translate-x-1/2 w-px h-10 bg-gray-100 group-last:hidden"></div>
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm text-gray-600 leading-tight">
-                    <span className="font-bold text-gray-900">{item.user}</span> {item.action} <span className="text-red-600 font-medium">{item.target}</span>
+                  <p className="text-sm text-gray-600 leading-snug">
+                    <span className="font-black text-gray-900">{item.userName}</span> {item.action} 
+                    <span className="text-indigo-600 font-bold ml-1">{item.targetName}</span>
                   </p>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase mt-1 tracking-wider">{item.time}</p>
+                  <p className="text-[10px] font-black text-gray-400 uppercase mt-2 tracking-widest">{item.timeAgo}</p>
                 </div>
-                <ArrowUpRight size={14} className="text-gray-300 group-hover:text-red-500 transition-colors" />
+                <ArrowUpRight size={16} className="text-gray-300 group-hover:text-indigo-500 transition-colors" />
               </div>
-            ))}
+            )) : (
+              <p className="text-center text-gray-400 text-sm italic">No recent pulses detected.</p>
+            )}
           </div>
-          <button className="w-full mt-8 py-3 bg-gray-50 text-gray-600 text-xs font-bold rounded-xl hover:bg-gray-100 transition-colors border border-gray-100">
-            View All Audit Logs
+          <button className="w-full mt-10 py-4 bg-gray-50 text-gray-500 text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-gray-100 transition-colors border border-gray-100">
+            View System Audit Trail
           </button>
         </div>
       </div>
     </div>
   );
 };
-
-// Helper Import for Placeholder
-const BarChart3 = ({ className, size }) => (
-  <svg 
-    className={className} 
-    width={size} 
-    height={size} 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round"
-  >
-    <path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20V14"/>
-  </svg>
-);
 
 export default AdminOverview;

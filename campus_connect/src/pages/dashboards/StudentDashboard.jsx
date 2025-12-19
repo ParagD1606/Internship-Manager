@@ -10,6 +10,8 @@ import MyProfile from './student/MyProfile'; // 👈 Import this
 import Opportunities from './student/Opportunities';
 import MyApplications from './student/MyApplications';
 import Aitool from './student/Aitool';
+import Progress from './student/Progress'; // 👈 ADD THIS
+
 const StudentDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Overview');
@@ -48,7 +50,7 @@ const StudentDashboard = () => {
         {activeTab === 'Opportunities' && <Opportunities />}
         {activeTab === 'Applications' && <MyApplications/>  }
         {activeTab === 'AI Tools' && <Aitool/>}
-        {activeTab === 'Progress Tracker' && <Placeholder tab="Progress Tracker" />}
+        {activeTab === 'Progress Tracker' && <Progress />}
         {activeTab === 'Chat' && <Placeholder tab="Chat" />}
         {activeTab === 'Certificates' && <Placeholder tab="Certificates" />}
         {activeTab === 'Settings' && <Placeholder tab="Settings" />}
